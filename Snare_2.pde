@@ -1,8 +1,12 @@
 import ddf.minim.*;
 import ddf.minim.ugens.*;
+import ddf.minim.effects.*;
 
 Minim minim;
 AudioOutput out;
+AudioRecorder recorder;
+boolean recorded = false;
+
 
 class SnareInstrument implements Instrument
 {
@@ -11,6 +15,9 @@ class SnareInstrument implements Instrument
 
   // 胴鳴り
   Oscil body;
+  
+  //ローパスフィルタ
+  LowPassSP lp;
 
   // ADSR
   ADSR noiseADSR;
@@ -18,46 +25,21 @@ class SnareInstrument implements Instrument
 
   SnareInstrument()
   {
-    // =====================
-    // ノイズ
-    // =====================
+    noise = new Noise(0.35, Noise.Tint.PINK);
+    lp = new LowPassSP( 4500, out.sampleRate());
+    body = new Oscil(180, 0.3, Waves.SINE);
 
-    noise = new Noise(0.5, Noise.Tint.PINK);
-
-    // =====================
-    // 胴鳴り
-    // =====================
-
-    body = new Oscil(90, 0.6, Waves.SINE);
-
-    // =====================
-    // ADSR設定
-    // attack, decay, sustain, release
-    // =====================
-
-    noiseADSR = new ADSR(
-      0.8,   // 最大振幅
-      0.001, // attack
-      0.12,  // decay
-      0.0,   // sustain
-      0.05   // release
-    );
-
-    bodyADSR = new ADSR(
-      0.6,
-      0.001,
-      0.08,
-      0.0,
-      0.05
-    );
+    noiseADSR = new ADSR(1.0, 0.001, 0.25, 0.0, 0.4);
+    bodyADSR  = new ADSR(0.6, 0.001, 0.25, 0.0, 0.2);
+    
 
     // 接続
-    noise.patch(noiseADSR);
-    body.patch(bodyADSR);
-
+    noise.patch(lp);
+    lp.patch(noiseADSR);
     noiseADSR.patch(out);
+    body.patch(bodyADSR);
     bodyADSR.patch(out);
-  }
+    }
 
   void noteOn(float duration)
   {
@@ -101,3 +83,5 @@ void keyPressed()
     out.playNote(0.0, 0.15, new SnareInstrument());
   }
 }
+
+//6_15最新版
